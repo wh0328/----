@@ -1,6 +1,6 @@
 import crypto from "crypto";
 export const config = {
-  runtime: 'nodejs',
+  runtime: "nodejs"
 };
 
 function rfc1123Date() {
