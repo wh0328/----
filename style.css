@@ -13,7 +13,12 @@ body {
 
 a {
   text-decoration: none;
-  color: inherit;
+  color: #2563eb;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: #1d4ed8;
 }
 
 .site-header {
