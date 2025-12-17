@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>多媒体课程实验在线平台</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="logo">多媒体课程实验在线平台</div>
+  <nav class="top-nav">
+    <a href="index.html" class="active">🏠 首页</a>
+    <a href="exp1_rag.html">🔍 RAG系统</a>
+    <a href="exp2_voice_agent.html">🎤 语音AI代理</a>
+    <a href="exp3_robot.html">🤖 机械臂垃圾分类</a>
+    <a href="exp4_video.html">🎬 AI视频编辑</a>
+    <a href="exp5_web_design.html">💻 网页制作</a>
+  </nav>
+</header>
+
+<main class="container">
+  <section class="hero">
+    <div class="hero-text">
+      <h1>欢迎来到多媒体课程实验在线平台</h1>
+      <p>
+        本平台用于展示和说明本课程的多媒体相关实验内容，
+        包含 AI 视频编辑、机械臂垃圾分类、RAG 检索增强问答系统等多个实验。
+      </p>
+    </div>
+    <div class="hero-media">
+      <img src="图片/79d52971-498a-4e04-ac6a-7c1d13e6e900.png" alt="多媒体课程实验示意图" style="max-width: 100%; border-radius: 12px;">
+    </div>
+  </section>
+
+  <section class="card-grid">
+    <h2>实验入口</h2>
+    <div class="experiment-buttons">
+      <a href="exp1_rag.html" class="exp-btn exp-btn-1">
+        <div class="exp-icon">🔍</div>
+        <div class="exp-content">
+          <h3>实验一：RAG知识问答系统</h3>
+          <p>学习构建RAG系统：文档加载、向量化存储、相似度检索与答案生成</p>
+        </div>
+        <div class="exp-arrow">→</div>
+      </a>
+
+      <a href="exp2_voice_agent.html" class="exp-btn exp-btn-2">
+        <div class="exp-icon">🎤</div>
+        <div class="exp-content">
+          <h3>实验二：语音AI代理</h3>
+          <p>构建基于ReAct框架的智能语音AI代理，掌握LLM集成、工具调用</p>
+        </div>
+        <div class="exp-arrow">→</div>
+      </a>
+
+      <a href="exp3_robot.html" class="exp-btn exp-btn-3">
+        <div class="exp-icon">🤖</div>
+        <div class="exp-content">
+          <h3>实验三：机械臂垃圾分类</h3>
+          <p>理解机械臂工作原理与垃圾分类算法，编程控制机械臂完成分类</p>
+        </div>
+        <div class="exp-arrow">→</div>
+      </a>
+
+      <a href="exp4_video.html" class="exp-btn exp-btn-4">
+        <div class="exp-icon">🎬</div>
+        <div class="exp-content">
+          <h3>实验四：AI视频编辑</h3>
+          <p>掌握专业视频编辑软件及AI视频编辑工具，完成创意视频设计</p>
+        </div>
+        <div class="exp-arrow">→</div>
+      </a>
+
+      <a href="exp5_web_design.html" class="exp-btn exp-btn-5">
+        <div class="exp-icon">💻</div>
+        <div class="exp-content">
+          <h3>实验五：网页制作</h3>
+          <p>学习网页设计与多媒体技术，构建交互式网页应用</p>
+        </div>
+        <div class="exp-arrow">→</div>
+      </a>
+    </div>
+  </section>
+
+  <section class="card-grid">
+    <h2>多媒体技术课程介绍</h2>
+    <p class="hint">
+      本课程主要介绍多媒体技术的基础概念与应用实践，涵盖音频、视频、图像处理及交互式网页多媒体展示等内容。
+    </p>
+    <div class="section">
+      <h3>课程主要内容</h3>
+      <ul>
+        <li>多媒体基础概念：文本、图像、音频、视频及其编码方式。</li>
+        <li>多媒体编辑工具的使用：如图像处理软件、音视频编辑软件等。</li>
+        <li>网页多媒体技术：HTML5 中的音频、视频标签及常用属性。</li>
+        <li>交互设计与用户体验：通过导航、布局和多媒体元素提升交互性。</li>
+      </ul>
+      <h3>课程特色与实践</h3>
+      <ul>
+        <li>结合实际案例开展实验，如 AI 视频编辑、机械臂垃圾分类演示、RAG 问答系统展示等。</li>
+        <li>鼓励学生结合 AI 工具进行创意设计和作品优化。</li>
+        <li>通过在线实验平台集中展示各次实验的说明与成果。</li>
+      </ul>
+    </div>
+  </section>
+    <section class="section" id="spark-section">
+    <h2>讯飞星火 AI 问答（X1.5 WebSocket）</h2>
+    <p class="hint">输入问题后，页面会先请求云函数生成一次性鉴权 WebSocket 地址，再直连星火获取流式回答（前端不保存密钥）。</p>
+
+    <div class="spark-form">
+      <div class="spark-field">
+        <label for="sparkQuestion">问题</label>
+        <textarea id="sparkQuestion" rows="4" placeholder="请输入你的问题..."></textarea>
+      </div>
+      <button class="btn" style="margin-top:8px;" onclick="callSpark()">发送</button>
+
+      <pre class="code-like" id="sparkResponse" style="margin-top:12px;">等待输入...</pre>
+      <p class="note" style="margin-top:6px;">说明：需要部署云函数接口 <code>/api/spark-ws-url</code>（Vercel Functions），用于生成鉴权 URL。</p>
+    </div>
+  </section>
+
+</main>
+
+    <script>
+    async function callSpark() {
+      const question = document.getElementById('sparkQuestion').value.trim();
+      const output = document.getElementById('sparkResponse');
+
+      if (!question) {
+        output.textContent = '请输入问题';
+        return;
+      }
+
+      output.textContent = '连接中...
+';
+
+      try {
+        // 1) 向云函数获取“已签名的 WebSocket URL”
+        // 需要你在 Vercel 环境变量中配置：XF_APP_ID / XF_API_KEY / XF_API_SECRET
+        const { url, app_id } = await fetch('/api/spark-ws-url').then(r => {
+          if (!r.ok) throw new Error('获取鉴权URL失败: ' + r.status);
+          return r.json();
+        });
+
+        // 2) 直连讯飞 WebSocket
+        const ws = new WebSocket(url);
+
+        ws.onopen = () => {
+          const req = {
+            header: { uid: 'user_001', app_id },
+            parameter: {
+              chat: {
+                domain: 'spark-x',      // X1.5
+                temperature: 0.2,
+                max_tokens: 2048
+              }
+            },
+            payload: {
+              message: {
+                text: [{ role: 'user', content: question }]
+              }
+            }
+          };
+
+          output.textContent = '已发送，生成中...
+
+';
+          ws.send(JSON.stringify(req));
+        };
+
+        ws.onmessage = (e) => {
+          const msg = JSON.parse(e.data);
+          const t0 = msg?.payload?.choices?.text?.[0];
+
+          if (t0?.content) output.textContent += t0.content;
+
+          const done = msg?.header?.status === 2 || msg?.payload?.choices?.status === 2;
+          if (done) ws.close(1000);
+        };
+
+        ws.onerror = () => {
+          output.textContent += '\n\n[错误] WebSocket 连接失败';
+        };
+
+      } catch (err) {
+        output.textContent = '[错误] ' + err.message;
+      }
+    }
+  </script>
+
+</body>
+</html>

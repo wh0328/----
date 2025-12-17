@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>实验四：从零开始构建语音AI代理项目</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="logo">多媒体课程实验在线平台</div>
+  <nav class="top-nav">
+    <a href="index.html">首页</a>
+    <a href="exp1_video.html">实验一：AI视频编辑</a>
+    <a href="exp2_robot.html">实验二：机械臂垃圾分类</a>
+    <a href="exp3_rag.html">实验三：RAG系统</a>
+    <a href="exp4_voice_agent.html" class="active">实验四：语音AI代理</a>
+  </nav>
+</header>
+
+<main class="container">
+  <header class="sub-header">
+    <h1 id="top">实验四：从零开始构建语音AI代理项目</h1>
+    <p class="sub-meta">
+      目的：学习构建基于ReAct框架的智能语音AI代理，掌握LLM集成、工具调用和语音交互技术。
+    </p>
+    <nav class="sub-nav">
+      快速跳转：
+      <a href="#purpose">实验目的与内容</a> |
+      <a href="#tech">技术栈</a> |
+      <a href="#structure">项目结构</a> |
+      <a href="#steps">实现步骤</a> |
+      <a href="#run">运行指南</a> |
+      <a href="#top">返回顶部</a>
+    </nav>
+  </header>
+
+  <section class="section" id="purpose">
+    <h2>一、实验目的与内容</h2>
+    <p>
+      本实验将指导你如何从零开始，一步步构建一个功能完善的、基于大语言模型（LLM）的语音AI代理。
+      这个代理能够理解自然语言指令，并调用各种工具来完成任务，同时提供一个简单的Web界面进行交互。
+    </p>
+
+    <h3>项目概述</h3>
+    <p>
+      我们要构建的AI代理是一个基于<strong>ReAct（Reasoning and Acting）</strong>思想的智能系统。
+      它能接收用户的文本或语音输入，通过LLM进行思考，决定是否需要使用工具以及使用哪个工具，
+      然后执行动作，最终将结果反馈给用户。
+    </p>
+
+    <h3>核心功能</h3>
+    <ul>
+      <li><strong>语音交互</strong>：支持语音输入和语音播报</li>
+      <li><strong>工具调用</strong>：能够调用外部工具来完成特定任务（如播放音乐、控制硬件等）</li>
+      <li><strong>Web界面</strong>：通过Gradio库提供一个简洁的用户交互界面</li>
+      <li><strong>模块化设计</strong>：项目结构清晰，易于扩展新的工具和功能</li>
+    </ul>
+  </section>
+
+  <section class="section" id="tech">
+    <h2>二、技术栈</h2>
+    <ul>
+      <li><strong>Python 3.x</strong>（Python 3.10及以上版本）</li>
+      <li><strong>Gradio</strong>: 用于快速构建Web UI</li>
+      <li><strong>requests</strong>: 用于与ASR（语音识别）、TTS（文本转语音）和LLM的API进行交互</li>
+    </ul>
+  </section>
+
+  <section class="section" id="structure">
+    <h2>三、项目结构</h2>
+    <p>
+      在开始编码之前，我们先设计好项目的目录结构，一个好的结构能让项目更清晰、更易于维护。
+    </p>
+
+    <h4>完整项目结构</h4>
+    <pre><code class="language-text">jeston_ai-main/
+├── agent_app/
+│   └── agent.py              # 初始化代理，并注册所有工具
+├── react_agent/
+│   ├── __init__.py
+│   ├── agent.py              # ReAct代理的核心逻辑实现
+│   ├── LLM.py                # 与大语言模型API交互的封装
+│   ├── toolBase.py           # 所有工具的基类和注册器
+│   └── tools/                # 存放所有具体工具的目录
+│       ├── __init__.py
+│       ├── get_day.py        # 获取日期工具
+│       └── music_play.py     # 音乐播放工具
+├── utils/
+│   ├── asr.py                # 语音识别 (ASR) 工具函数
+│   ├── tts.py                # 文本转语音 (TTS) 工具函数
+│   └── stats.py              # 状态管理（例如LED）
+├── audio/                    # 存放音频文件的目录
+├── config.py                 # 存放项目配置，如API的URL
+├── main.py                   # 项目主入口，启动Gradio Web应用
+└── req.txt                   # 项目依赖库</code></pre>
+  </section>
+
+  <section class="section" id="steps">
+    <h2>四、实现步骤</h2>
+
+    <h3>4.1 环境准备</h3>
+    <p>首先，创建项目根目录 <code>jeston_ai-main</code>，并建立如上所示的文件夹结构。</p>
+
+    <h4>创建Python虚拟环境</h4>
+    <pre><code class="language-bash"># 1. 创建名为 venv，Python 版本为 3.10 的 conda 环境
+conda create -n venv python=3.10 -y
+
+# 2. 激活环境
+conda activate venv
+
+# 3. 验证 Python 版本
+python --version
+
+# 4. 查看环境信息
+conda info --envs</code></pre>
+
+    <h4>安装依赖</h4>
+    <p>创建 <code>req.txt</code> 文件并写入以下内容：</p>
+    <pre><code class="language-text">gradio</code></pre>
+    <p>然后通过pip安装：</p>
+    <pre><code class="language-bash">pip install -r req.txt</code></pre>
+
+    <h3>4.2 配置文件</h3>
+    <p>在根目录下创建 <code>config.py</code>，用于存放所有外部服务的URL。</p>
+    <pre><code class="language-python"># 语音识别服务的API URL
+ASR_URL = "YOUR_ASR_API_URL"
+
+# 文本转语音服务的API URL
+TTS_URL = "YOUR_TTS_API_URL"
+
+# 大语言模型服务的API URL
+LLM_URL = "YOUR_LLM_API_URL"</code></pre>
+
+    <h4>校内API地址配置</h4>
+    <pre><code class="language-python"># 模型名称：model: qwen2.5:32b
+LLM_URL = "http://172.18.144.18/svc/DGsanOif-1/v1"
+
+# 模型名称：model:whisper-large:3
+ASR_URL = "http://172.18.144.18/svc/5R7yXQAt-1/v1/audio/transcriptions"
+
+# 模型名称：model:CosyVoice-300M-SFT
+TTS_URL = "http://172.18.144.18/svc/h7yw77di-1/v1/audio/speech"</code></pre>
+
+    <h3>4.3 核心工具 (Core Tools)</h3>
+    <p>在 <code>react_agent/toolBase.py</code> 中定义工具的基类和注册器：</p>
+    <pre><code class="language-python"># 用于存储所有已注册工具的字典
+tools_registry = {}
+
+class ToolBase:
+    """所有工具类的基类"""
+
+    def __init__(self):
+        # 注册工具
+        if self.name in tools_registry:
+            raise ValueError(f"Tool {self.name} already exists.")
+        tools_registry[self.name] = self
+
+    def __call__(self, *args, **kwargs):
+        # 让工具实例可以像函数一样被调用
+        return self.run(*args, **kwargs)
+
+    @property
+    def name(self):
+        """工具的名称，必须被子类覆盖"""
+        raise NotImplementedError
+
+    @property
+    def description(self):
+        """工具功能的描述，必须被子类覆盖"""
+        raise NotImplementedError
+
+    def run(self, *args, **kwargs):
+        """工具的具体执行逻辑，必须被子类覆盖"""
+        raise NotImplementedError</code></pre>
+
+    <h4>创建具体工具示例</h4>
+    <p>在 <code>react_agent/tools/get_day.py</code> 中创建一个获取日期的工具：</p>
+    <pre><code class="language-python">import datetime
+from react_agent.toolBase import ToolBase
+
+class GetDay(ToolBase):
+    """一个获取今天日期的工具"""
+
+    @property
+    def name(self):
+        return "get_day"
+
+    @property
+    def description(self):
+        return "该工具用于获取今天的日期。"
+
+    def run(self, *args, **kwargs):
+        return datetime.date.today().strftime("%Y年%m月%d日")
+
+# 实例化工具，它会自动注册到tools_registry中
+get_day = GetDay()</code></pre>
+
+    <h3>4.4 大语言模型集成</h3>
+    <p>在 <code>react_agent/LLM.py</code> 中封装与LLM的API交互：</p>
+    <pre><code class="language-python">import requests
+import json
+
+class RequestLLM:
+    def __init__(self, base_url, model_name):
+        self.base_url = base_url
+        self.model_name = model_name
+
+    def chat(self, messages, stream=True):
+        """
+        与LLM API进行对话。
+        - messages: 对话历史
+        - stream: 是否以流式方式返回数据
+        """
+        api_url = f"{self.base_url}/chat/completions"
+        payload = {
+            "model": self.model_name,
+            "messages": messages,
+            "stream": stream,
+        }
+
+        try:
+            response = requests.post(api_url, json=payload, stream=stream)
+            response.raise_for_status()  # 如果请求失败则抛出异常
+
+            if stream:
+                for chunk in response.iter_lines():
+                    if chunk:
+                        chunk_str = chunk.decode('utf-8')
+                        if chunk_str.startswith("data: "):
+                            chunk_str = chunk_str[len("data: "):]
+                        if chunk_str.strip() == "[DONE]":
+                            break
+                        try:
+                            data = json.loads(chunk_str)
+                            delta = data.get("choices", [{}])[0].get("delta", {})
+                            if "content" in delta:
+                                yield delta["content"]
+                        except json.JSONDecodeError:
+                            continue
+            else:
+                yield response.json()["choices"][0]["message"]["content"]
+
+        except requests.exceptions.RequestException as e:
+            print(f"请求LLM API时出错: {e}")
+            yield "调用模型服务时出错。"</code></pre>
+
+    <h3>4.5 ReAct 代理逻辑</h3>
+    <p>在 <code>react_agent/agent.py</code> 中实现ReAct框架的核心逻辑：</p>
+    <pre><code class="language-python">import re
+
+class ReactAgent:
+    def __init__(self, llm):
+        self.llm = llm
+        self.tools = {}
+
+        self.system_prompt_template = """
+        今天日期：{date}
+        你是一个乐于助人、尊敬他人、诚实可靠的人工智能助手。
+        你总是遵循指令并给出解释。
+        如果问题没有任何意义，或者事实上不连贯，请解释原因，而不是回答不正确的问题。
+        如果你不知道问题的答案，请不要分享虚假信息。
+
+        你能够使用以下工具：
+        {tools_string}
+
+        使用工具的流程如下：
+        **Thought**: 你应该时刻思考该做什么。
+        **Action**: 你要使用的工具名称，必须是[{tool_names}]中的一个。
+        **Action input**: 工具的输入。
+        **Observation**: 工具返回的结果。
+        ... (这个Thought/Action/Action input/Observation的过程可以重复N次)
+        **Thought**: 我现在知道最终答案了。
+        **Final Answer**: 对原始问题的最终回答。
+
+        开始！
+        """
+
+    def register_tool(self, name, tool):
+        self.tools[name] = tool
+
+    def _build_system_prompt(self):
+        tools_string = "\n".join([f"- {name}: {tool.description}" for name, tool in self.tools.items()])
+        tool_names = ", ".join(self.tools.keys())
+        # 在这里简单地用一个固定日期，实际项目中可以动态获取
+        date_info = "2025年10月14日"
+        return self.system_prompt_template.format(
+            date=date_info,
+            tools_string=tools_string,
+            tool_names=tool_names
+        )
+
+    def chat(self, messages):
+        # 注入系统提示
+        system_prompt = self._build_system_prompt()
+        full_messages = [{"role": "system", "content": system_prompt}] + messages
+
+        # 目前的实现是直接返回LLM的完整输出，
+        # 一个更完整的ReAct实现会在这里解析Action, Action Input,
+        # 并执行工具，然后将Observation返回给LLM继续循环。
+        # 为简化教程，此处直接流式输出。
+        for chunk in self.llm.chat(full_messages, stream=True):
+            yield chunk</code></pre>
+
+    <h3>4.6 语音工具</h3>
+    <p>在 <code>utils/asr.py</code> 中实现语音识别功能：</p>
+    <pre><code class="language-python">import requests
+from config import ASR_URL
+
+def asr(audio_path):
+    """调用ASR服务将音频转换为文字"""
+    files = {'file': (audio_path, open(audio_path, 'rb'), 'audio/wav')}
+    try:
+        response = requests.post(ASR_URL, files=files)
+        response.raise_for_status()
+        return response.json().get("text", "语音识别失败")
+    except requests.exceptions.RequestException as e:
+        print(f"ASR请求失败: {e}")
+        return "语音识别服务出错"</code></pre>
+
+    <p>在 <code>utils/tts.py</code> 中实现文本转语音功能：</p>
+    <pre><code class="language-python">import requests
+import wave
+from config import TTS_URL
+
+def tts(text):
+    """调用TTS服务将文字转换为音频"""
+    payload = {
+        "input": text,
+        "model": "CosyVoice-300M-SFT",
+        "voice": "中文女"
+    }
+
+    try:
+        response = requests.post(TTS_URL, json=payload, stream=True)
+        response.raise_for_status()
+
+        output_path = "audio/res.wav"
+        with wave.open(output_path, 'wb') as wf:
+            wf.setnchannels(1)
+            wf.setsampwidth(2)
+            wf.setframerate(24000)
+
+            for chunk in response.iter_content(chunk_size=1024):
+                if chunk:
+                    wf.writeframes(chunk)
+
+        return output_path
+
+    except requests.exceptions.RequestException as e:
+        print(f"TTS请求失败: {e}")
+        return None</code></pre>
+
+    <h3>4.7 代理初始化</h3>
+    <p>在 <code>agent_app/agent.py</code> 中组装所有部件：</p>
+    <pre><code class="language-python">from react_agent.LLM import RequestLLM
+from react_agent.agent import ReactAgent
+from react_agent.toolBase import tools_registry
+
+# 动态导入所有在tools目录下的工具
+from react_agent.tools import get_day  # , music_play, ...
+from config import LLM_URL
+
+def init_agent():
+    # 1. 实例化LLM
+    llm = RequestLLM(base_url=LLM_URL, model_name="qwen2.5:32b")
+
+    # 2. 实例化Agent
+    agent = ReactAgent(llm)
+
+    # 3. 自动注册所有已实例化的工具
+    for name, tool_instance in tools_registry.items():
+        agent.register_tool(name, tool_instance)
+
+    return agent</code></pre>
+
+    <h3>4.8 Web界面</h3>
+    <p>在根目录的 <code>main.py</code> 中创建用户界面：</p>
+    <pre><code class="language-python">import gradio as gr
+from agent_app.agent import init_agent
+from utils.asr import asr
+from utils.tts import tts
+
+# 初始化代理
+agent = init_agent()
+
+def chatbot_response(user_input, history, messages):
+    """处理文本输入的响应"""
+    messages.append({'role': 'user', 'content': user_input})
+    response = ""
+
+    for chunk in agent.chat(messages):
+        response += chunk
+        # 流式更新UI
+        yield history + [(user_input, response)], messages
+
+    messages.append({'role': 'assistant', 'content': response})
+    # 最终更新
+    return history + [(user_input, response)], messages
+
+def audio_chat(audio, history, messages):
+    """处理音频输入的响应"""
+    if not audio:
+        return history, messages, None
+
+    user_input = asr(audio)
+    messages.append({'role': 'user', 'content': user_input})
+    response = ""
+
+    for chunk in agent.chat(messages):
+        response += chunk
+        yield history + [(user_input, response)], messages
+
+    messages.append({'role': 'assistant', 'content': response})
+    return history + [(user_input, response)], messages, None
+
+def to_speech(messages, play_audio):
+    """将最后一条消息转换为语音"""
+    if play_audio == "是" and messages:
+        # 移除ReAct的特定标记，让语音更自然
+        clean_text = re.sub(r'\*\*(.*?)\*\*', '', messages[-1]['content'])
+        audio_path = tts(clean_text)
+        return audio_path, None
+    return None, None
+
+# 使用 Gradio Blocks 构建界面
+with gr.Blocks(theme=gr.themes.Soft()) as demo:
+    gr.Markdown("# 语音AI代理")
+
+    messages = gr.State([])  # 存储对话历史
+    chatbot = gr.Chatbot(label="Agent", height=500)
+
+    with gr.Row():
+        user_input = gr.Textbox(placeholder="输入你的消息...", scale=4)
+        submit_btn = gr.Button("发送")
+
+    with gr.Row():
+        user_audio = gr.Audio(sources="microphone", type="filepath", label="语音输入")
+        play_radio = gr.Radio(label="是否转为语音", choices=["是", "否"], value="否")
+        output_audio = gr.Audio(label="语音输出", autoplay=True, interactive=False)
+
+    # 绑定事件
+    submit_btn.click(
+        chatbot_response,
+        [user_input, chatbot, messages],
+        [chatbot, messages]
+    ).then(
+        to_speech, [messages, play_radio], [output_audio, user_audio]
+    ).then(lambda: "", outputs=[user_input])
+
+    user_audio.stop_recording(
+        audio_chat,
+        [user_audio, chatbot, messages],
+        [chatbot, messages]
+    ).then(
+        to_speech, [messages, play_radio], [output_audio, user_audio]
+    )
+
+# 启动应用
+if __name__ == "__main__":
+    demo.queue().launch(server_name="0.0.0.0")</code></pre>
+  </section>
+
+  <section class="section" id="run">
+    <h2>五、运行指南</h2>
+
+    <h3>运行条件</h3>
+    <ol>
+      <li>确保你的 <code>config.py</code> 文件中填写了正确的API URL</li>
+      <li>确保你的Python虚拟环境已激活</li>
+    </ol>
+
+    <h3>启动应用</h3>
+    <p>在项目根目录下运行主程序：</p>
+    <pre><code class="language-bash">python main.py</code></pre>
+
+    <h3>访问界面</h3>
+    <p>打开浏览器，访问 <code>http://0.0.0.0:7860</code>（或终端中显示的URL），即可开始与你的AI代理进行交互！</p>
+
+    <div class="note">
+      <strong>恭喜你！</strong>你已经从零开始构建了一个完整的语音AI代理项目。
+      现在你可以通过在 <code>react_agent/tools/</code> 目录下添加更多的工具来不断扩展它的能力。
+    </div>
+  </section>
+
+  <div class="sub-nav">
+    <a href="index.html">返回首页</a> |
+    <a href="exp1_video.html">前往实验一：AI视频编辑</a> |
+    <a href="exp2_robot.html">前往实验二：机械臂垃圾分类</a> |
+    <a href="exp3_rag.html">前往实验三：RAG系统</a> |
+    <a href="#top">返回顶部</a>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <p>多媒体课程实验在线平台</p>
+</footer>
+</body>
+</html>

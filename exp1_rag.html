@@ -1,0 +1,858 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>实验：RAG检索增强知识问答系统</title>
+  <link rel="stylesheet" href="style.css">
+  <script>
+    // 代码块复制功能
+    document.addEventListener('DOMContentLoaded', function() {
+      // 为所有代码块添加复制按钮
+      const codeBlocks = document.querySelectorAll('pre');
+
+      codeBlocks.forEach(function(block, index) {
+        // 创建代码块头部
+        const header = document.createElement('div');
+        header.className = 'code-header';
+
+        // 尝试检测语言
+        const code = block.querySelector('code');
+        let language = 'text';
+        if (code) {
+          const classes = code.className.split(' ');
+          const langClass = classes.find(cls => cls.startsWith('language-'));
+          if (langClass) {
+            language = langClass.replace('language-', '');
+          }
+        }
+
+        header.innerHTML = `
+          <span class="code-language">${language}</span>
+          <button class="copy-btn" data-code-index="${index}">复制</button>
+        `;
+
+        // 将头部插入到pre元素内部
+        block.insertBefore(header, block.firstChild);
+      });
+
+      // 添加复制按钮点击事件
+      document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('copy-btn')) {
+          const btn = e.target;
+          const index = btn.getAttribute('data-code-index');
+          const codeBlock = document.querySelectorAll('pre')[index];
+          const code = codeBlock.querySelector('code');
+
+          if (code) {
+            // 复制代码内容
+            navigator.clipboard.writeText(code.textContent).then(function() {
+              // 显示复制成功状态
+              btn.textContent = '已复制!';
+              btn.classList.add('copied');
+
+              // 3秒后恢复原状
+              setTimeout(function() {
+                btn.textContent = '复制';
+                btn.classList.remove('copied');
+              }, 3000);
+            }).catch(function(err) {
+              console.error('复制失败:', err);
+              btn.textContent = '复制失败';
+              setTimeout(function() {
+                btn.textContent = '复制';
+              }, 2000);
+            });
+          }
+        }
+      });
+    });
+  </script>
+</head>
+<body>
+<header class="site-header">
+  <div class="header-left">
+    <a href="index.html" class="home-link">🏠 首页</a>
+    <div class="logo">多媒体课程实验在线平台</div>
+  </div>
+  <nav class="top-nav">
+    <a href="index.html">首页</a>
+    <a href="exp1_rag.html" class="active">实验一：RAG系统</a>
+    <a href="exp2_voice_agent.html">实验二：语音AI代理</a>
+    <a href="exp3_robot.html">实验三：机械臂垃圾分类</a>
+    <a href="exp4_video.html">实验四：AI视频编辑</a>
+    <a href="exp5_web_design.html">实验五：网页制作</a>
+  </nav>
+</header>
+
+<main class="container">
+  <header class="sub-header">
+    <h1 id="top">实验：RAG检索增强知识问答系统</h1>
+    <p class="sub-meta">
+      目的：使用 RAG（Retrieval-Augmented Generation）系统进行知识问答，理解其原理并完成简单系统搭建。
+    </p>
+    <nav class="sub-nav">
+      <a href="#purpose">实验目的及内容</a> |
+      <a href="#points">实验要点</a> |
+      <a href="#env">实验环境</a> |
+      <a href="#supplementary">相关补充说明</a> |
+      <a href="#project_structure">项目结构介绍</a> |
+      <a href="#model_modules">模型封装模块</a> |
+      <a href="#utils_details">工具函数模块</a> |
+      <a href="#rag_chain">RAG链核心模块</a> |
+      <a href="#main_program">主程序模块</a> |
+      <a href="#experiment_steps">实验步骤</a> |
+      <a href="#tasks">实验任务</a> |
+      <a href="#report">实验报告要求</a> |
+      <a href="#top">返回顶部</a>
+    </nav>
+  </header>
+
+  <section class="section" id="purpose">
+    <h2>一、实验目的及内容</h2>
+    <p><strong>目的：</strong>使用 RAG 系统进行知识问答，提升基于文档的问答效果。</p>
+    <p><strong>内容：</strong></p>
+    <p>
+      RAG 是一种结合信息检索与生成式 AI 的技术，通过从知识库中检索相关信息来增强大语言模型的回答能力。
+      本实验将学习如何构建一个完整的 RAG 系统，包括：文档加载、向量化存储、相似度检索和答案生成等核心模块。
+    </p>
+  </section>
+
+  <section class="section" id="points">
+    <h2>二、实验要点</h2>
+    <ul>
+      <li>了解 RAG 系统的基本原理和工作流程。</li>
+      <li>学习 LangChain 框架的基本使用方法。</li>
+      <li>掌握文档加载、文本分割、向量化存储等关键技术。</li>
+      <li>学会使用 FAISS 进行高效向量检索。</li>
+      <li>理解如何将检索到的上下文信息与大语言模型结合生成答案。</li>
+    </ul>
+  </section>
+
+  <section class="section" id="env">
+    <h2>三、实验环境</h2>
+    <ul>
+      <li>Python 3</li>
+      <li>LangChain 框架</li>
+      <li>FAISS 向量数据库</li>
+      <li>Qwen 大语言模型（通过 API 端点访问）</li>
+    </ul>
+  </section>
+
+  <section class="section" id="supplementary">
+    <h2>四、相关补充说明</h2>
+
+    <h3>4.1 源码和实验手册</h3>
+    <div class="download-section">
+      <p>下载链接（源码与实验手册打包）：</p>
+      <a href="https://tnt.georgedonne.cn/ailab/nlp251113" target="_blank" class="btn download-btn">
+        📁 下载 rag_starter.zip
+      </a>
+      <p class="file-info">
+        建议保存为 <code>rag_starter.zip</code>，并存放到 <code>/home/cg/ailab</code> 目录，便于后续解压与运行。
+      </p>
+    </div>
+
+    <p>依次执行以下命令，将 zip 包解压缩：</p>
+    <pre><code class="language-bash">cd /home/cg/ailab       # 假定 zip 文件保存在 /home/cg/ailab 目录
+ls -l                   # 确认下 zip 文件是否在该目录中
+unzip rag_starter.zip   # 假定 zip 文件名是rag_starter.zip</code></pre>
+
+    <h3>4.2 各个目录下的 __init__.py</h3>
+
+    <h4>项目根目录 ./__init__.py</h4>
+    <pre><code>"""
+RAG Starter - 基于 LangChain 的 RAG 系统
+"""
+__version__ = "1.0.0"</code></pre>
+
+    <h4>chains/__init__.py</h4>
+    <pre><code>"""
+RAG 链模块
+"""
+from .rag_chain import RAGChain
+
+__all__ = ["RAGChain"]</code></pre>
+
+    <h4>config/__init__.py</h4>
+    <pre><code>"""
+配置模块
+"""
+from .settings import settings
+
+__all__ = ["settings"]</code></pre>
+
+    <h4>models/__init__.py</h4>
+    <pre><code>"""
+模型模块 - 导出 LLM 和嵌入模型
+"""
+from .llm import get_llm
+from .embedding import get_embedding_model
+
+__all__ = ["get_llm", "get_embedding_model"]</code></pre>
+
+    <h4>utils/__init__.py</h4>
+    <pre><code>"""
+工具模块 - 导出文档加载器
+"""
+from .document_loader import load_documents, split_documents
+
+__all__ = ["load_documents", "split_documents"]</code></pre>
+
+    <h3>4.3 安装 VS Code</h3>
+    <ol>
+      <li>访问 VS Code 官网</li>
+      <li>下载 ubuntu arm64 .deb</li>
+      <li>执行 <code>sudo dpkg -i 下载的包名.deb</code> 安装</li>
+    </ol>
+
+    <h3>4.4 本地笔记本装 MobaXterm</h3>
+    <p>下载链接：<a href="https://tnt.georgedonne.cn/ailab/nlp251113" target="_blank">MobaXterm_Portable_v25.3.zip</a></p>
+    <p>下载到笔记本，解压缩后就可运行。可通过笔记本连接开发板。</p>
+  </section>
+
+  <section class="section" id="project_structure">
+    <h2>五、项目结构介绍</h2>
+
+    <h3>5.1 项目结构</h3>
+    <pre><code>RAG系统项目结构：
+├── chains/                 # RAG链模块
+│   ├── __init__.py
+│   └── rag_chain.py       # RAG链核心实现
+├── config/                 # 配置模块
+│   ├── __init__.py
+│   └── settings.py        # 系统配置
+├── models/                 # 模型模块
+│   ├── __init__.py
+│   ├── embedding.py       # 嵌入模型封装
+│   └── llm.py             # LLM模型封装
+├── utils/                  # 工具模块
+│   ├── __init__.py
+│   └── document_loader.py # 文档加载器
+├── vectorstore/            # 向量存储目录（运行时生成）
+├── kb.txt                 # 默认知识库文件
+├── main.py                # 主程序
+├── requirements.txt       # 依赖包列表
+└── README.md              # 项目说明</code></pre>
+
+    <h3>5.2 配置模块详解（config/settings.py）</h3>
+
+    <h4>样例代码</h4>
+    <pre><code class="language-python">"""
+系统配置
+"""
+import os
+from pydantic_settings import BaseSettings
+
+class Settings(BaseSettings):
+    # API 配置
+    api_key: str = ""
+    base_url: str = "https://api.tnt.georgedonne.cn/v1"
+
+    # 模型配置
+    llm_model: str = "qwen2.5-14b-instruct"
+    embedding_model: str = "text2vec-large-chinese"
+
+    # 文档处理配置
+    chunk_size: int = 500
+    chunk_overlap: int = 50
+
+    # 检索配置
+    top_k: int = 3
+
+    # 向量存储配置
+    vectorstore_path: str = "./vectorstore"
+
+    class Config:
+        env_file = ".env"
+
+settings = Settings()</code></pre>
+
+    <h4>配置参数说明</h4>
+    <ul>
+      <li><strong>api_key</strong>: API密钥，用于访问模型服务</li>
+      <li><strong>base_url</strong>: API服务的基础URL</li>
+      <li><strong>llm_model</strong>: 使用的LLM模型名称</li>
+      <li><strong>embedding_model</strong>: 使用的嵌入模型名称</li>
+      <li><strong>chunk_size</strong>: 文档分割的块大小</li>
+      <li><strong>chunk_overlap</strong>: 文档块之间的重叠大小</li>
+      <li><strong>top_k</strong>: 检索时返回的最相似文档数量</li>
+      <li><strong>vectorstore_path</strong>: 向量存储保存路径</li>
+    </ul>
+
+    <h4>环境变量支持</h4>
+    <p>系统支持通过环境变量或.env文件来配置参数，提高安全性。</p>
+  </section>
+
+  <section class="section" id="model_modules">
+    <h2>六、模型封装模块详解</h2>
+
+    <h3>6.1 LLM 模型封装（models/llm.py）</h3>
+
+    <h4>样例代码</h4>
+    <pre><code class="language-python">"""
+LLM 模型封装模块
+"""
+from langchain_openai import ChatOpenAI
+from config.settings import settings
+
+def get_llm(temperature: float = 0.1) -> ChatOpenAI:
+    """
+    获取 LLM 实例
+
+    Args:
+        temperature: 温度参数，控制生成文本的随机性
+
+    Returns:
+        ChatOpenAI: 配置好的 LLM 实例
+    """
+    return ChatOpenAI(
+        model=settings.llm_model,
+        openai_api_key=settings.api_key,
+        openai_api_base=settings.base_url,
+        temperature=temperature,
+    )</code></pre>
+
+    <h3>6.2 嵌入模型封装（models/embedding.py）</h3>
+
+    <h4>样例代码</h4>
+    <pre><code class="language-python">"""
+嵌入模型封装模块
+"""
+from langchain_openai import OpenAIEmbeddings
+from config.settings import settings
+
+def get_embedding_model() -> OpenAIEmbeddings:
+    """
+    获取嵌入模型实例
+
+    Returns:
+        OpenAIEmbeddings: 配置好的嵌入模型实例
+    """
+    return OpenAIEmbeddings(
+        model=settings.embedding_model,
+        openai_api_key=settings.api_key,
+        openai_api_base=settings.base_url,
+    )</code></pre>
+  </section>
+
+  <section class="section" id="utils_details">
+    <h2>七、工具函数模块详解（utils/document_loader.py）</h2>
+
+    <h4>样例代码</h4>
+    <pre><code class="language-python">"""
+文档加载和处理工具
+"""
+from langchain_community.document_loaders import (
+    TextLoader,
+    PyPDFLoader,
+    UnstructuredMarkdownLoader,
+)
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_core.documents import Document
+from config.settings import settings
+from typing import List
+
+def load_documents(file_path: str) -> List[Document]:
+    """
+    根据文件类型加载文档
+
+    Args:
+        file_path: 文件路径
+
+    Returns:
+        List[Document]: 加载的文档列表
+    """
+    if file_path.endswith('.txt'):
+        loader = TextLoader(file_path, encoding='utf-8')
+    elif file_path.endswith('.pdf'):
+        loader = PyPDFLoader(file_path)
+    elif file_path.endswith(('.md', '.markdown')):
+        loader = UnstructuredMarkdownLoader(file_path)
+    else:
+        raise ValueError(f"不支持的文件类型: {file_path}")
+
+    return loader.load()
+
+def split_documents(documents: List[Document]) -> List[Document]:
+    """
+    将文档分割成小块
+
+    Args:
+        documents: 原始文档列表
+
+    Returns:
+        List[Document]: 分割后的文档块列表
+    """
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=settings.chunk_size,
+        chunk_overlap=settings.chunk_overlap,
+        separators=["\n\n", "\n", "。", "！", "？", "，", " ", ""]
+    )
+
+    return text_splitter.split_documents(documents)</code></pre>
+  </section>
+
+  <section class="section" id="rag_chain">
+    <h2>八、RAG 链核心模块详解（chains/rag_chain.py）</h2>
+
+    <h3>8.1 完整样例代码</h3>
+    <pre><code class="language-python">"""
+RAG 链核心模块
+"""
+import os
+from langchain_community.vectorstores import FAISS
+from langchain.chains import RetrievalQA
+from langchain_core.prompts import PromptTemplate
+from models.llm import get_llm
+from models.embedding import get_embedding_model
+from utils.document_loader import load_documents, split_documents
+from config.settings import settings
+from typing import List, Optional
+from langchain_core.documents import Document
+
+class RAGChain:
+    def __init__(self):
+        self.llm = get_llm()
+        self.embedding_model = get_embedding_model()
+        self.vectorstore = None
+        self.qa_chain = None
+
+    def build_vector_store(self, file_path: str, append: bool = False) -> None:
+        """
+        构建向量存储
+
+        Args:
+            file_path: 文档文件路径
+            append: 是否追加到现有向量存储
+        """
+        print("加载文档...")
+        documents = load_documents(file_path)
+
+        print("分割文档...")
+        split_docs = split_documents(documents)
+
+        print(f"文档已分割为 {len(split_docs)} 个块")
+
+        if append and os.path.exists(settings.vectorstore_path):
+            print("加载现有向量存储...")
+            self.vectorstore = FAISS.load_local(
+                settings.vectorstore_path,
+                self.embedding_model,
+                allow_dangerous_deserialization=True
+            )
+            print("追加文档到向量存储...")
+            self.vectorstore.add_documents(split_docs)
+        else:
+            print("创建新的向量存储...")
+            self.vectorstore = FAISS.from_documents(split_docs, self.embedding_model)
+
+        print("保存向量存储...")
+        self.vectorstore.save_local(settings.vectorstore_path)
+        print("向量存储构建完成！")
+
+    def load_vector_store(self) -> None:
+        """
+        加载向量存储
+        """
+        if not os.path.exists(settings.vectorstore_path):
+            raise FileNotFoundError(f"向量存储不存在: {settings.vectorstore_path}")
+
+        self.vectorstore = FAISS.load_local(
+            settings.vectorstore_path,
+            self.embedding_model,
+            allow_dangerous_deserialization=True
+        )
+
+    def _build_chain(self) -> None:
+        """
+        构建 RAG 链
+        """
+        if self.vectorstore is None:
+            raise ValueError("向量存储未初始化，请先构建或加载向量存储")
+
+        # 创建检索器
+        retriever = self.vectorstore.as_retriever(
+            search_type="similarity",
+            search_kwargs={"k": settings.top_k}
+        )
+
+        # 创建提示模板
+        template = """基于以下上下文信息回答问题。如果上下文中没有相关信息，请说"我无法从提供的知识库中找到相关信息"。
+
+上下文：
+{context}
+
+问题：{question}
+
+回答："""
+
+        prompt = PromptTemplate(
+            template=template,
+            input_variables=["context", "question"]
+        )
+
+        # 构建 QA 链
+        self.qa_chain = RetrievalQA.from_chain_type(
+            llm=self.llm,
+            chain_type="stuff",
+            retriever=retriever,
+            chain_type_kwargs={"prompt": prompt},
+            return_source_documents=True
+        )
+
+    def _format_docs(self, docs: List[Document]) -> str:
+        """
+        格式化文档列表
+
+        Args:
+            docs: 文档列表
+
+        Returns:
+            str: 格式化后的文档字符串
+        """
+        return "\n\n".join(doc.page_content for doc in docs)
+
+    def query(self, question: str) -> str:
+        """
+        执行查询
+
+        Args:
+            question: 查询问题
+
+        Returns:
+            str: 答案
+        """
+        if self.qa_chain is None:
+            self._build_chain()
+
+        result = self.qa_chain({"query": question})
+        return result["result"]
+
+    def add_documents(self, documents: List[Document]) -> None:
+        """
+        添加文档到向量存储
+
+        Args:
+            documents: 要添加的文档列表
+        """
+        if self.vectorstore is None:
+            raise ValueError("向量存储未初始化")
+
+        split_docs = split_documents(documents)
+        self.vectorstore.add_documents(split_docs)
+        self.vectorstore.save_local(settings.vectorstore_path)</code></pre>
+
+    <h3>8.2 RAGChain 类初始化</h3>
+    <p>RAGChain 类是整个 RAG 系统的核心，负责协调各个模块的工作。</p>
+    <ul>
+      <li>初始化 LLM 和嵌入模型实例</li>
+      <li>维护向量存储和 QA 链的引用</li>
+    </ul>
+
+    <h3>8.3 构建向量存储：build_vector_store()</h3>
+    <p>该方法负责从文档构建向量存储：</p>
+    <ul>
+      <li>加载并分割文档</li>
+      <li>支持追加模式和新建模式</li>
+      <li>保存向量存储到本地</li>
+    </ul>
+
+    <h3>8.4 加载向量存储：load_vector_store()</h3>
+    <p>加载已存在的向量存储以供查询使用。</p>
+
+    <h3>8.5 构建 RAG 链：_build_chain()</h3>
+    <p>创建完整的 RAG 查询链：</p>
+    <ul>
+      <li>配置相似度检索器</li>
+      <li>设置提示模板</li>
+      <li>构建 QA 链</li>
+    </ul>
+
+    <h3>8.6 格式化文档：_format_docs()</h3>
+    <p>将检索到的文档格式化为上下文字符串。</p>
+
+    <h3>8.7 查询函数：query()</h3>
+    <p>执行用户查询并返回答案。</p>
+
+    <h3>8.8 添加文档：add_documents()</h3>
+    <p>动态添加新文档到现有向量存储。</p>
+  </section>
+
+  <section class="section" id="main_program">
+    <h2>九、主程序模块详解（main.py）</h2>
+
+    <h3>9.1 完整样例代码</h3>
+    <pre><code class="language-python">"""
+RAG 系统主程序
+"""
+import argparse
+import sys
+from chains.rag_chain import RAGChain
+
+def main():
+    parser = argparse.ArgumentParser(description="RAG 检索增强知识问答系统")
+    parser.add_argument("--mode", choices=["build", "query", "interactive"],
+                       required=True, help="运行模式")
+    parser.add_argument("--file", help="构建模式下的文档文件路径")
+    parser.add_argument("--question", help="查询模式下的问题")
+    parser.add_argument("--append", action="store_true",
+                       help="是否追加到现有向量存储")
+
+    args = parser.parse_args()
+
+    # 创建 RAG 实例
+    rag = RAGChain()
+
+    if args.mode == "build":
+        # 构建模式
+        if not args.file:
+            print("错误: 构建模式需要指定文件路径 (--file)")
+            print("示例: python main.py --mode build --file kb.txt")
+            return
+
+        try:
+            rag.build_vector_store(args.file, args.append)
+            print("向量存储构建成功！")
+        except Exception as e:
+            print(f"构建失败: {e}")
+            return
+
+    elif args.mode == "query":
+        # 查询模式
+        if not args.question:
+            print("错误: 查询模式需要指定问题 (--question)")
+            print("示例: python main.py --mode query --question \"希冀平台是什么？\"")
+            return
+
+        try:
+            rag.load_vector_store()
+            answer = rag.query(args.question)
+            print(f"问题: {args.question}")
+            print(f"答案: {answer}")
+        except FileNotFoundError:
+            print("错误: 向量存储不存在。请先使用 build 模式构建向量存储。")
+            print("示例命令: python main.py --mode build --file your_document.txt")
+            return
+        except Exception as e:
+            print(f"查询失败: {e}")
+            return
+
+    elif args.mode == "interactive":
+        # 交互模式
+        print("正在加载向量存储...")
+        try:
+            rag.load_vector_store()
+        except FileNotFoundError:
+            print("错误: 向量存储不存在。请先使用 build 模式构建向量存储。")
+            print("示例命令: python main.py --mode build --file your_document.txt")
+            return
+
+        print("RAG 系统已就绪！输入 'quit' 或 'exit' 退出。\n")
+
+        while True:
+            question = input("请输入您的问题: ").strip()
+
+            if question.lower() in ["quit", "exit", "退出"]:
+                print("再见！")
+                break
+
+            if not question:
+                continue
+
+            try:
+                print("正在生成答案...")
+                answer = rag.query(question)
+                print(f"\n答案:\n{answer}\n")
+            except Exception as e:
+                print(f"错误: {e}\n")
+
+if __name__ == "__main__":
+    main()</code></pre>
+
+    <h3>9.2 命令行参数解析</h3>
+    <p>程序支持三种运行模式：</p>
+    <ul>
+      <li><code>--mode build</code>: 构建向量存储</li>
+      <li><code>--mode query</code>: 单次查询</li>
+      <li><code>--mode interactive</code>: 交互式对话</li>
+    </ul>
+
+    <h3>9.3 构建模式（build）</h3>
+    <p><strong>功能</strong>：从文档构建向量存储</p>
+    <p><strong>使用示例</strong>：</p>
+    <pre><code class="language-bash">python main.py --mode build --file kb.txt</code></pre>
+
+    <h3>9.4 查询模式（query）</h3>
+    <p><strong>功能</strong>：加载已有向量存储，执行单次查询</p>
+    <p><strong>使用示例</strong>：</p>
+    <pre><code class="language-bash">python main.py --mode query --question "希冀平台是什么？"</code></pre>
+
+    <h3>9.5 交互模式（interactive）</h3>
+    <p><strong>功能</strong>：启动交互式对话循环，支持持续接收用户问题</p>
+    <p><strong>使用示例</strong>：</p>
+    <pre><code class="language-bash">python main.py --mode interactive</code></pre>
+  </section>
+
+  <section class="section" id="experiment_steps">
+    <h2>十、实验步骤</h2>
+
+    <h3>10.1 实验步骤1：安装依赖</h3>
+    <p>首先，需要安装项目依赖。在项目根目录下运行：</p>
+    <pre><code class="language-bash">pip install -r requirements.txt</code></pre>
+
+    <p><strong>依赖说明</strong>：</p>
+    <ul>
+      <li><code>langchain</code>: LangChain 核心库</li>
+      <li><code>langchain-openai</code>: OpenAI 兼容接口</li>
+      <li><code>langchain-community</code>: 社区扩展（包含文档加载器等）</li>
+      <li><code>faiss-cpu</code>: FAISS 向量数据库（CPU 版本）</li>
+      <li><code>pydantic-settings</code>: 配置管理</li>
+      <li><code>pypdf</code>: PDF 文件处理</li>
+    </ul>
+
+    <h3>10.2 实验步骤2：构建向量存储</h3>
+    <p>使用提供的知识库文件 <code>kb.txt</code> 构建向量存储：</p>
+    <pre><code class="language-bash">python main.py --mode build --file kb.txt</code></pre>
+
+    <p><strong>执行过程</strong>：</p>
+    <ol>
+      <li>加载 <code>kb.txt</code> 文件</li>
+      <li>将文档分割成小块</li>
+      <li>使用嵌入模型将每个块转换为向量</li>
+      <li>使用 FAISS 创建向量索引</li>
+      <li>保存到 <code>vectorstore/</code> 目录</li>
+    </ol>
+
+    <h3>10.3 实验步骤3：交互式查询</h3>
+    <p>构建向量存储后，启动交互式查询：</p>
+    <pre><code class="language-bash">python main.py --mode interactive</code></pre>
+
+    <h3>10.4 实验步骤4：单次查询</h3>
+    <p>也可以使用单次查询模式：</p>
+    <pre><code class="language-bash">python main.py --mode query --question "希冀平台是什么？"</code></pre>
+
+    <h3>10.5 实验步骤5：使用自定义文档</h3>
+    <p>可以使用自己的文档构建知识库。支持的文件格式：</p>
+    <ul>
+      <li><code>.txt</code>: 纯文本文件</li>
+      <li><code>.pdf</code>: PDF 文件</li>
+      <li><code>.md</code> / <code>.markdown</code>: Markdown 文件</li>
+    </ul>
+
+    <p><strong>示例</strong>：</p>
+    <pre><code class="language-bash"># 使用 PDF 文件
+python main.py --mode build --file your_document.pdf
+
+# 使用 Markdown 文件
+python main.py --mode build --file your_document.md</code></pre>
+  </section>
+
+  <section class="section" id="tasks">
+    <h2>十一、实验任务</h2>
+
+    <h3>11.1 基础任务</h3>
+    <p>参考实验步骤，完成以下任务：</p>
+    <ol>
+      <li><strong>环境搭建</strong>：安装所有依赖，确保系统可以正常运行</li>
+      <li><strong>向量存储构建</strong>：使用 <code>kb.txt</code> 构建向量存储，观察构建过程和输出信息</li>
+      <li><strong>交互式查询</strong>：启动交互模式，尝试提出不同类型的问题，观察系统回答的质量</li>
+      <li><strong>单次查询测试</strong>：使用 query 模式测试不同的问题，记录答案质量</li>
+    </ol>
+
+    <h3>11.2 扩展任务</h3>
+
+    <h4>11.2.1 使用自定义知识库</h4>
+    <ol>
+      <li>准备一个自己感兴趣领域的文档（如技术文档、学术论文、校园通知等）</li>
+      <li>使用该文档构建向量存储</li>
+      <li>测试系统对该领域问题的回答能力</li>
+    </ol>
+
+    <h4>11.2.2 参数调优实验</h4>
+    <ol>
+      <li>修改 <code>config/settings.py</code> 中的 <code>CHUNK_SIZE</code> 和 <code>CHUNK_OVERLAP</code> 参数</li>
+      <li>观察不同参数对检索效果的影响</li>
+      <li>修改 <code>TOP_K</code> 参数，观察返回文档数量对答案质量的影响</li>
+    </ol>
+
+    <h4>11.2.3 多文档知识库</h4>
+    <ol>
+      <li>查阅文档，思考如何支持word、excel文档的检索</li>
+      <li>修改代码，尝试实现</li>
+      <li>尝试支持其他格式文档（如Word、Excel等）</li>
+    </ol>
+  </section>
+
+  <section class="section" id="steps">
+    <h2>四、RAG 介绍与详细步骤</h2>
+    <p>
+      RAG（检索增强生成）系统的核心流程可以概括为：
+      “<strong>用户提问 → 检索相关文档片段 → 将上下文送入大模型 → 生成更有依据的答案</strong>”。
+    </p>
+    <ul>
+      <li>提供事实依据：答案基于实际文档内容，而非模型训练数据。</li>
+      <li>减少“幻觉”：通过检索到的上下文约束，降低模型编造信息的可能性。</li>
+      <li>支持知识更新：只需更新知识库，无需重新训练模型。</li>
+      <li>提高准确性：针对特定领域知识库可以提升专业性。</li>
+    </ul>
+    <p>
+      更详细操作步骤可参考在线资料：
+      <a href="https://tnt.georgedonne.cn/ailab/nlp251113" target="_blank">
+        RAG 检索增强知识问答系统实验文档
+      </a>
+    </p>
+  </section>
+
+  <section class="section" id="report">
+    <h2>十二、实验报告要求</h2>
+
+    <h3>12.1 实验过程记录</h3>
+    <ol>
+      <li><strong>实验过程记录</strong>：
+        <ul>
+          <li>记录完整的实验步骤，包括环境搭建、向量存储构建、查询测试等</li>
+          <li>提供关键步骤的截图或输出结果</li>
+          <li>记录使用自定义文档的实验过程和结果</li>
+        </ul>
+      </li>
+      <li><strong>代码理解分析</strong>：
+        <ul>
+          <li>分析每个模块的功能和实现原理</li>
+          <li>说明 RAG 系统的工作流程</li>
+          <li>解释向量检索和答案生成的过程</li>
+        </ul>
+      </li>
+    </ol>
+
+    <h3>12.2 思考题</h3>
+    <ol>
+      <li><strong>思考题1</strong>：RAG 系统相比直接使用大语言模型有什么优势和局限性？请从准确性、实时性、成本等角度进行分析</li>
+      <li><strong>思考题2</strong>：文档分割策略（chunk_size 和 chunk_overlap）对检索效果有什么影响？如何选择合适的参数？</li>
+      <li><strong>思考题3</strong>：RAG 技术在哪些领域有潜在应用？请结合你的专业背景，谈谈 RAG 技术如何解决实际问题</li>
+    </ol>
+
+    <h3>12.3 问题与改进</h3>
+    <ol>
+      <li>记录实验过程中遇到的问题和解决方法</li>
+      <li>提出对系统的改进建议</li>
+      <li>思考如何优化检索效果和答案质量</li>
+    </ol>
+  </section>
+
+  <div class="sub-nav">
+    <a href="index.html">返回首页</a> |
+    <a href="exp2_voice_agent.html">前往实验二：语音AI代理</a> |
+    <a href="exp3_robot.html">前往实验三：机械臂垃圾分类</a> |
+    <a href="exp4_video.html">前往实验四：AI视频编辑</a> |
+    <a href="exp5_web_design.html">前往实验五：网页制作</a> |
+    <a href="#top">返回顶部</a>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <p>多媒体课程实验在线平台</p>
+</footer>
+</body>
+</html>
+
+
