@@ -1,4 +1,7 @@
 import crypto from "crypto";
+export const config = {
+  runtime: 'nodejs18.x'
+};
 
 function rfc1123Date() {
   return new Date().toUTCString();
