@@ -1,5 +1,0 @@
-{
-  "functions": {
-    "api/spark-ws-url.mjs": "@vercel/node"
-  }
-}

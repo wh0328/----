@@ -10,8 +10,5 @@
   },
   "keywords": ["multimedia", "experiments", "ai", "web"],
   "author": "",
-  "license": "MIT",
-  "engines": {
-    "node": "18.x"
-  }
+  "license": "MIT"
 }
