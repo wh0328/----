@@ -1,0 +1,17 @@
+{
+  "name": "multimedia-experiments",
+  "version": "1.0.0",
+  "description": "多媒体课程实验在线平台",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'No build step required'",
+    "start": "vercel dev"
+  },
+  "keywords": ["multimedia", "experiments", "ai", "web"],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

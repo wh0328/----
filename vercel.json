@@ -1,0 +1,8 @@
+{
+  "version": 2,
+  "functions": {
+    "api/spark-ws-url.mjs": {
+      "runtime": "nodejs18.x"
+    }
+  }
+}
