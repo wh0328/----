@@ -1,8 +1,3 @@
 {
-  "version": 2,
-  "functions": {
-    "api/spark-ws-url.mjs": {
-      "runtime": "@vercel/node"
-    }
-  }
+  "version": 2
 }
