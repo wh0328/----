@@ -103,87 +103,9 @@
       </ul>
     </div>
   </section>
-    <section class="section" id="spark-section">
-    <h2>讯飞星火 AI 问答（X1.5 WebSocket）</h2>
-    <p class="hint">输入问题后，页面会先请求云函数生成一次性鉴权 WebSocket 地址，再直连星火获取流式回答（前端不保存密钥）。</p>
-
-    <div class="spark-form">
-      <div class="spark-field">
-        <label for="sparkQuestion">问题</label>
-        <textarea id="sparkQuestion" rows="4" placeholder="请输入你的问题..."></textarea>
-      </div>
-      <button class="btn" style="margin-top:8px;" onclick="callSpark()">发送</button>
-
-      <pre class="code-like" id="sparkResponse" style="margin-top:12px;">等待输入...</pre>
-      <p class="note" style="margin-top:6px;">说明：需要部署云函数接口 <code>/api/spark-ws-url</code>（Vercel Functions），用于生成鉴权 URL。</p>
-    </div>
-  </section>
 
 </main>
 
-    <script>
-    async function callSpark() {
-      const question = document.getElementById('sparkQuestion').value.trim();
-      const output = document.getElementById('sparkResponse');
-
-      if (!question) {
-        output.textContent = '请输入问题';
-        return;
-      }
-
-      output.textContent = '连接中...';
-
-      try {
-        // 1) 向云函数获取“已签名的 WebSocket URL”
-        // 需要你在 Vercel 环境变量中配置：XF_APP_ID / XF_API_KEY / XF_API_SECRET
-        const { url, app_id } = await fetch('/api/spark-ws-url').then(r => {
-          if (!r.ok) throw new Error('获取鉴权URL失败: ' + r.status);
-          return r.json();
-        });
-
-        // 2) 直连讯飞 WebSocket
-        const ws = new WebSocket(url);
-
-        ws.onopen = () => {
-          const req = {
-            header: { uid: 'user_001', app_id },
-            parameter: {
-              chat: {
-                domain: 'spark-x',      // X1.5
-                temperature: 0.2,
-                max_tokens: 2048
-              }
-            },
-            payload: {
-              message: {
-                text: [{ role: 'user', content: question }]
-              }
-            }
-          };
-
-          output.textContent = '已发送，生成中...';
-          ws.send(JSON.stringify(req));
-        };
-
-        ws.onmessage = (e) => {
-          const msg = JSON.parse(e.data);
-          const t0 = msg?.payload?.choices?.text?.[0];
-
-          if (t0?.content) output.textContent += t0.content;
-
-          const done = msg?.header?.status === 2 || msg?.payload?.choices?.status === 2;
-          if (done) ws.close(1000);
-        };
-
-        ws.onerror = () => {
-          output.textContent += '\n\n[错误] WebSocket 连接失败';
-        };
-
-      } catch (err) {
-        output.textContent = '[错误] ' + err.message;
-      }
-    }
-  </script>
 
 </body>
 </html>

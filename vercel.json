@@ -2,10 +2,5 @@
   "version": 2,
   "buildCommand": null,
   "outputDirectory": ".",
-  "framework": null,
-  "functions": {
-    "api/spark-ws-url.mjs": {
-      "runtime": "nodejs18.x"
-    }
-  }
+  "framework": null
 }
