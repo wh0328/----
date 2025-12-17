@@ -131,8 +131,7 @@
         return;
       }
 
-      output.textContent = '连接中...
-';
+      output.textContent = '连接中...';
 
       try {
         // 1) 向云函数获取“已签名的 WebSocket URL”
@@ -162,9 +161,7 @@
             }
           };
 
-          output.textContent = '已发送，生成中...
-
-';
+          output.textContent = '已发送，生成中...';
           ws.send(JSON.stringify(req));
         };
 

@@ -3,7 +3,7 @@ import crypto from "crypto";
 function rfc1123Date() {
   return new Date().toUTCString();
 }
-
+//rebuilded
 function buildAuthUrl(apiKey, apiSecret) {
   const host = "spark-api.xf-yun.com";
   const path = "/v1/x1"; // X1.5 WebSocket
