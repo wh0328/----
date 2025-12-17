@@ -1,12 +1,10 @@
 import crypto from "crypto";
 
-// Vercel API function for Spark AI WebSocket URL generation
-export default async function handler(req, res) {
-
+// Helper functions
 function rfc1123Date() {
   return new Date().toUTCString();
 }
-//rebuilded
+
 function buildAuthUrl(apiKey, apiSecret) {
   const host = "spark-api.xf-yun.com";
   const path = "/v1/x1"; // X1.5 WebSocket
